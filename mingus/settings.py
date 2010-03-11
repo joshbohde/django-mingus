@@ -13,6 +13,13 @@ STATICFILES_DIRS = (
     os.path.join(PROJECT_ROOT, 'media', 'mingus'),
 )
 
+#staticgenerator app value
+WEB_ROOT =  os.path.join(PROJECT_ROOT, 'static')
+
+STATIC_GENERATOR_URLS = (
+   r'^/$',
+   )
+
 SITE_ID = 1
 ROOT_URLCONF = 'mingus.urls'
 TIME_ZONE = 'America/New_York'
@@ -30,6 +37,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.doc.XViewMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
+    'staticgenerator.middleware.StaticGeneratorMiddleware',
     'django.contrib.flatpages.middleware.FlatpageFallbackMiddleware',
     'slimmer.middleware.CompressHtmlMiddleware',
     'sugar.middleware.debugging.UserBasedExceptionMiddleware',
