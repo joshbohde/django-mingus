@@ -11,6 +11,12 @@ from mingus.core.views import springsteen_results, springsteen_firehose, \
 from robots.views import rules_list
 from mingus.core.feeds import AllEntries, ByTag
 
+from basic.blog.models import Post
+from django.dispatch import dispatcher
+from django.db.models import signals
+from staticgenerator import quick_delete
+from django.core.urlresolvers import reverse
+
 admin.autodiscover()
 
 feeds = {
@@ -77,6 +83,14 @@ urlpatterns += patterns('',
     (r'', include('basic.blog.urls')),
 )
 
+
+def delete_post(sender, instance, **kwargs):
+    quick_delete(reverse("home_index"),
+                 instance.get_absolute_url(),
+                 )
+
+signals.post_save.connect(delete_post, sender=Post)
+signals.post_delete.connect(delete_post, sender=Post)
 
 from django.conf import settings
 if settings.DEBUG:

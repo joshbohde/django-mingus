@@ -1,5 +1,8 @@
 from django.test.client import Client
 from django.test import TestCase
+from django.conf import settings
+from staticgenerator import quick_delete
+import os
 
 class MingusClientTests(TestCase):
     
@@ -138,7 +141,10 @@ class MingusClientTests(TestCase):
         self.failUnlessEqual(response.status_code, 200)
 
 
+    def assertCachedPageExists(self, page, *args, **kwargs):
+        self.assertTrue(os.access(os.path.join(settings.WEB_ROOT, page), os.F_OK), *args, **kwargs)
 
-
-
-
+    def test_HomePageCache(self):
+        quickdelete("/")
+        self.test_HomePage()
+        self.assertCachedPageExists("index.html")
