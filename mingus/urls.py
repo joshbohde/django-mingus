@@ -11,7 +11,9 @@ from mingus.core.views import springsteen_results, springsteen_firehose, \
 from robots.views import rules_list
 from mingus.core.feeds import AllEntries, ByTag
 
-from basic.blog.models import BlogRoll, Category, Settings
+from basic.blog.models import BlogRoll, Category, Settings, Post
+from quoteme.models import Quote
+from basic.bookmarks.models import Bookmark
 from basic.elsewhere.models import SocialNetworkProfile
 from django_proxy.models import Proxy
 from flatblocks.models import FlatBlock
@@ -88,10 +90,16 @@ urlpatterns += patterns('',
 )
 
 
-def delete_post(sender, instance, **kwargs):
+def delete_proxy(sender, instance, **kwargs):
         quick_delete(reverse("home_index"),
                  instance.content_object,
                  )
+
+def delete_content(sender, instance, **kwargs):
+        quick_delete(reverse("home_index"),
+                 instance,
+                 )
+
     
 def delete_all(sender, instance, **kwargs):
     quick_delete(reverse("home_index"),
@@ -99,8 +107,11 @@ def delete_all(sender, instance, **kwargs):
                  )
 
 
-signals.post_save.connect(delete_post, sender=Proxy)
-signals.post_delete.connect(delete_post, sender=Proxy)
+signals.post_save.connect(delete_proxy, sender=Proxy)
+
+signals.post_delete.connect(delete_content, sender=Post)
+signals.post_delete.connect(delete_content, sender=Quote)
+signals.post_delete.connect(delete_content, sender=Bookmark)
 
 signals.post_save.connect(delete_all, sender=BlogRoll)
 signals.post_delete.connect(delete_all, sender=BlogRoll)

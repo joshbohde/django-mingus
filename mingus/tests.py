@@ -261,3 +261,19 @@ class MingusClientTests(TestCase):
         q =FlatBlock.objects.all()[0]
         q.delete()
         self.assertCachedPageDoesNotExist("index.html")
+
+    def test_ClearHomePageCacheOnEditBookmark(self):
+        self.test_HomePage()
+        self.assertCachedPageExists("index.html")
+        q =Bookmark.objects.all()[0]
+        q.url += "+foo"
+        q.save()
+        self.assertCachedPageDoesNotExist("index.html")
+
+
+    def test_ClearHomePageCacheOnDeleteBookmark(self):
+        self.test_HomePage()
+        self.assertCachedPageExists("index.html")
+        q =Bookmark.objects.all()[0]
+        q.delete()
+        self.assertCachedPageDoesNotExist("index.html")
