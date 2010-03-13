@@ -103,9 +103,8 @@ def delete_content(sender, instance, **kwargs):
     
 def delete_all(sender, instance, **kwargs):
     quick_delete(reverse("home_index"),
-                 (p.content_object for p in Proxy.objects.all()),
+                 *[p.content_object for p in Proxy.objects.all()]
                  )
-
 
 signals.post_save.connect(delete_proxy, sender=Proxy)
 

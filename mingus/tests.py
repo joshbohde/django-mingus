@@ -3,11 +3,37 @@ from django.test import TestCase
 from django.conf import settings
 from staticgenerator import quick_delete
 from basic.blog.models import Post, BlogRoll, Category, Settings
-from basic.elsewhere.models import SocialNetworkProfile
+from basic.bookmarks.models import Bookmark
 from quoteme.models import Quote
+from basic.elsewhere.models import SocialNetworkProfile
 from flatblocks.models import FlatBlock
 
+
+from functools import wraps
 import os
+
+def make_path(*pages):
+    unabs = lambda p: p[1:] if os.path.isabs(p) else p
+    pages = (unabs(p) for p in pages)
+    path = os.path.join(settings.WEB_ROOT, *pages)
+    return path
+
+def clears_home(f):
+    @wraps(f)
+    def inner(self):
+        self.test_HomePage()
+        self.assertCachedPageExists("index.html")
+        f(self)
+        self.assertCachedPageDoesNotExist("index.html")
+    return inner
+
+def clears_post(f):
+    @wraps(f)
+    def inner(self):
+        p = self.test_PostCache()
+        f(self)
+        self.assertCachedPostDoesNotExist(p)
+    return inner
 
 class MingusClientTests(TestCase):
     
@@ -97,6 +123,12 @@ class MingusClientTests(TestCase):
                     follow=True)
         self.failUnlessEqual(response.status_code, 400)
 
+    def test_Post(self):
+        p = Post.objects.all()[0]
+        c = Client()
+        r = c.get(p.get_absolute_url())
+        self.failUnlessEqual(r.status_code, 200)
+        return p
 
     def test_QuoteList(self):
         '''Test quote list page renders.'''
@@ -147,14 +179,17 @@ class MingusClientTests(TestCase):
 
 
     def assertCachedPageExists(self, *pages):
-        path = os.path.join(settings.WEB_ROOT, *pages)
+        path = make_path(*pages)
         self.assertTrue(os.access(path, os.F_OK),
                          "Page %s is not in the cache." % path)
         
     def assertCachedPageDoesNotExist(self, *pages):
-        path = os.path.join(settings.WEB_ROOT, *pages)
+        path = make_path(*pages)
         self.assertFalse(os.access(path, os.F_OK),
                          "Page %s is in the cache." % path)
+
+    def assertCachedPostDoesNotExist(self, post):
+        self.assertCachedPageDoesNotExist(post.get_absolute_url(), "index.html")
         
     def test_HomePageCache(self):
         quick_delete("/")
@@ -162,118 +197,106 @@ class MingusClientTests(TestCase):
         self.test_HomePage()
         self.assertCachedPageExists("index.html")
 
+    def test_PostCache(self):
+        p = self.test_Post()
+        quick_delete(p.get_absolute_url())
+        self.assertCachedPostDoesNotExist(p)
+        p = self.test_Post()
+        self.assertCachedPageExists(p.get_absolute_url(), "index.html")
+        return p
+
+    @clears_home
+    @clears_post
     def test_ClearHomePageCacheOnEditPost(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
-        p = Post.objects.all()[0]
+        p = self.test_PostCache()
         p.title += "test"
         p.save()
-        self.assertCachedPageDoesNotExist("index.html")
+        self.assertCachedPostDoesNotExist(p)
 
+    @clears_home
+    @clears_post
     def test_ClearHomePageCacheOnDeletePost(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
-        p = Post.objects.all()[0]
+        p = self.test_PostCache()
         p.delete()
-        self.assertCachedPageDoesNotExist("index.html")
 
+    @clears_home
     def test_ClearHomePageCacheOnEditQuote(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
         q = Quote.objects.all()[0]
         q.slug += "-test"
         q.save()
-        self.assertCachedPageDoesNotExist("index.html")
 
+    @clears_home
     def test_ClearHomePageCacheOnDeleteQuote(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
-        p = Quote.objects.all()[0]
-        p.delete()
-        self.assertCachedPageDoesNotExist("index.html")
+        q = Quote.objects.all()[0]
+        q.delete()
 
-
+    @clears_home
+    @clears_post
     def test_ClearHomePageCacheOnEditBlogRoll(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
         q = BlogRoll.objects.all()[0]
         q.name += "-test"
         q.save()
-        self.assertCachedPageDoesNotExist("index.html")
 
+    @clears_home
+    @clears_post
     def test_ClearHomePageCacheOnDeleteBlogRoll(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
-        p = BlogRoll.objects.all()[0]
-        p.delete()
-        self.assertCachedPageDoesNotExist("index.html")
+        b = BlogRoll.objects.all()[0]
+        b.delete()
 
+    @clears_home
+    @clears_post
     def test_ClearHomePageCacheOnEditCategory(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
         q = Category.objects.all()[0]
         q.title += "-test"
         q.save()
-        self.assertCachedPageDoesNotExist("index.html")
 
+    @clears_home
+    @clears_post    
     def test_ClearHomePageCacheOnDeleteCategory(self):
         c = Category.objects.create(title="foo", slug="test")
         c.save()
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
-        c.delete()
-        self.assertCachedPageDoesNotExist("index.html")
+        clears_home(lambda self: c.delete())(self)
 
+    @clears_home
+    @clears_post    
     def test_ClearHomePageCacheOnEditSettings(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
         q = Settings.objects.all()[0]
         q.copyright = "test"
         q.save()
-        self.assertCachedPageDoesNotExist("index.html")
 
+    @clears_home
+    @clears_post    
     def test_ClearHomePageCacheOnEditSocialNetwork(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
         q = SocialNetworkProfile.objects.all()[0]
         q.name += "-test"
         q.save()
-        self.assertCachedPageDoesNotExist("index.html")
 
+    @clears_home
+    @clears_post    
     def test_ClearHomePageCacheOnDeleteSocialNetwork(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
         q = SocialNetworkProfile.objects.all()[0]
         q.delete()
-        self.assertCachedPageDoesNotExist("index.html")
 
+    @clears_home
+    @clears_post    
     def test_ClearHomePageCacheOnEditFlatBlock(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
         q =FlatBlock.objects.all()[0]
         q.header = "-test"
         q.save()
-        self.assertCachedPageDoesNotExist("index.html")
 
+    @clears_home
+    @clears_post    
     def test_ClearHomePageCacheOnDeleteFlatBlock(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
         q =FlatBlock.objects.all()[0]
         q.delete()
-        self.assertCachedPageDoesNotExist("index.html")
 
+    @clears_home
     def test_ClearHomePageCacheOnEditBookmark(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
         q =Bookmark.objects.all()[0]
         q.url += "+foo"
         q.save()
-        self.assertCachedPageDoesNotExist("index.html")
 
-
+    @clears_home
     def test_ClearHomePageCacheOnDeleteBookmark(self):
-        self.test_HomePage()
-        self.assertCachedPageExists("index.html")
         q =Bookmark.objects.all()[0]
         q.delete()
-        self.assertCachedPageDoesNotExist("index.html")

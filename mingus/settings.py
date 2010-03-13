@@ -18,6 +18,7 @@ WEB_ROOT =  os.path.join(PROJECT_ROOT, 'static')
 
 STATIC_GENERATOR_URLS = (
    r'^/$',
+   r'^/\d{4}/\d{1,2}/\d{1,2}/[-\w]+',
    )
 
 SITE_ID = 1
