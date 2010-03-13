@@ -35,6 +35,14 @@ def clears_post(f):
         self.assertCachedPostDoesNotExist(p)
     return inner
 
+def clears_quote(f):
+    @wraps(f)
+    def inner(self):
+        q = self.test_QuoteCache()
+        f(self)
+        self.assertCachedPostDoesNotExist(q)
+    return inner
+
 class MingusClientTests(TestCase):
     
     fixtures = ['test_data.json', ]
@@ -205,6 +213,15 @@ class MingusClientTests(TestCase):
         self.assertCachedPageExists(p.get_absolute_url(), "index.html")
         return p
 
+    def test_QuoteCache(self):
+        quote = Quote.objects.all()[0]
+        quick_delete(quote.get_absolute_url())
+        self.assertCachedPostDoesNotExist(quote)        
+        c = Client()
+        response = c.get(quote.get_absolute_url())
+        self.assertCachedPageExists(quote.get_absolute_url(), "index.html")
+        return quote
+
     @clears_home
     @clears_post
     def test_ClearHomePageCacheOnEditPost(self):
@@ -224,14 +241,17 @@ class MingusClientTests(TestCase):
         q = Quote.objects.all()[0]
         q.slug += "-test"
         q.save()
+        self.assertCachedPostDoesNotExist(q)
 
     @clears_home
+    @clears_quote
     def test_ClearHomePageCacheOnDeleteQuote(self):
         q = Quote.objects.all()[0]
         q.delete()
 
     @clears_home
     @clears_post
+    @clears_quote
     def test_ClearHomePageCacheOnEditBlogRoll(self):
         q = BlogRoll.objects.all()[0]
         q.name += "-test"
@@ -239,12 +259,14 @@ class MingusClientTests(TestCase):
 
     @clears_home
     @clears_post
+    @clears_quote
     def test_ClearHomePageCacheOnDeleteBlogRoll(self):
         b = BlogRoll.objects.all()[0]
         b.delete()
 
     @clears_home
     @clears_post
+    @clears_quote
     def test_ClearHomePageCacheOnEditCategory(self):
         q = Category.objects.all()[0]
         q.title += "-test"
@@ -252,6 +274,7 @@ class MingusClientTests(TestCase):
 
     @clears_home
     @clears_post    
+    @clears_quote
     def test_ClearHomePageCacheOnDeleteCategory(self):
         c = Category.objects.create(title="foo", slug="test")
         c.save()
@@ -259,6 +282,7 @@ class MingusClientTests(TestCase):
 
     @clears_home
     @clears_post    
+    @clears_quote
     def test_ClearHomePageCacheOnEditSettings(self):
         q = Settings.objects.all()[0]
         q.copyright = "test"
@@ -266,6 +290,7 @@ class MingusClientTests(TestCase):
 
     @clears_home
     @clears_post    
+    @clears_quote
     def test_ClearHomePageCacheOnEditSocialNetwork(self):
         q = SocialNetworkProfile.objects.all()[0]
         q.name += "-test"
@@ -273,12 +298,14 @@ class MingusClientTests(TestCase):
 
     @clears_home
     @clears_post    
+    @clears_quote
     def test_ClearHomePageCacheOnDeleteSocialNetwork(self):
         q = SocialNetworkProfile.objects.all()[0]
         q.delete()
 
     @clears_home
     @clears_post    
+    @clears_quote
     def test_ClearHomePageCacheOnEditFlatBlock(self):
         q =FlatBlock.objects.all()[0]
         q.header = "-test"
@@ -286,6 +313,7 @@ class MingusClientTests(TestCase):
 
     @clears_home
     @clears_post    
+    @clears_quote
     def test_ClearHomePageCacheOnDeleteFlatBlock(self):
         q =FlatBlock.objects.all()[0]
         q.delete()
