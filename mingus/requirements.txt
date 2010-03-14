@@ -44,7 +44,7 @@ django-dbtemplates==0.6.1
 django-memcache-status==1.0.1
 -e git+git://github.com/kylef/django-request.git#egg=django-request
 
-staticgenerator
+-e git+git@github.com:joshbohde/staticgenerator.git#egg=staticgenerator
 
 
 
