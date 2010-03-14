@@ -7,10 +7,13 @@ from basic.bookmarks.models import Bookmark
 from quoteme.models import Quote
 from basic.elsewhere.models import SocialNetworkProfile
 from flatblocks.models import FlatBlock
-
+from cache import invalidate_base_template_cache, cache, CACHED_TEMPLATES, gen_template_cache_key
 
 from functools import wraps
 import os
+
+from django.conf import settings
+settings.CACHE_BACKEND = 'localmem:///'
 
 def make_path(*pages):
     unabs = lambda p: p[1:] if os.path.isabs(p) else p
@@ -18,13 +21,23 @@ def make_path(*pages):
     path = os.path.join(settings.WEB_ROOT, *pages)
     return path
 
+
 def clears_home(f):
+    def no_keys_exist(self):
+        for x in CACHED_TEMPLATES:
+            key = gen_template_cache_key(x)
+            self.assertEqual(cache.get(key), None, "%s was not None" % key)
+
     @wraps(f)
     def inner(self):
+        invalidate_base_template_cache()
+        no_keys_exist(self)
         self.test_HomePage()
         self.assertCachedPageExists("index.html")
         f(self)
         self.assertCachedPageDoesNotExist("index.html")
+        no_keys_exist(self)
+
     return inner
 
 def clears_post(f):
@@ -328,3 +341,4 @@ class MingusClientTests(TestCase):
     def test_ClearHomePageCacheOnDeleteBookmark(self):
         q =Bookmark.objects.all()[0]
         q.delete()
+
