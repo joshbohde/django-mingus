@@ -155,7 +155,7 @@
           {% endif %}
           {% endcache %}
 
-          {% cache 3600 "bas.popular-posts" %}
+          {% cache 3600 "base.popular-posts" %}
           {% get_popular_posts 10 as popular_post_list %}
           {% if popular_post_list %}
           <h4>{% trans "Popular Posts" %}</h4>
