@@ -1,0 +1,20 @@
+body {
+    color: #888;
+    background: #fff;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* LAYOUT */
+.post .date, .quote .date, .bookmark .date {
+	float: left;
+	padding: .3em .4em .3em 1.2em;
+	color: #333;
+	margin: 0.3em 0  0 -6.0em;
+	width: 3.8em;
+}
+.post .teaser{ border-bottom: solid 1.0em #333;}
+
+/* LINKS */
+a:hover { color: #5DB32B;}
+h2 a:hover { color: #5DB32B;}
+
