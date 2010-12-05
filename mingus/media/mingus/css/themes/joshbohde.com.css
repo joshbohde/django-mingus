@@ -1,4 +1,6 @@
 body {
+    margin: auto;
+    width: 720px;
     color: #888;
     background: #fff;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -18,3 +20,6 @@ body {
 a:hover { color: #5DB32B;}
 h2 a:hover { color: #5DB32B;}
 
+#nav form input{
+  float: right;
+}
